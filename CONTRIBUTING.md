@@ -1,4 +1,4 @@
-# 🤝 Contributing to HikKing
+# Contributing to HikKing
 
 ## Git Workflow
 
@@ -9,7 +9,7 @@
 - `bugfix/name` - Bug fixes
 
 ### Commits
--`feat` - Add new feature
+- `feat` - Add new feature
 - `fix` - Fix bug
 - `docs` - Update docs
 - `style` - Format code
@@ -20,9 +20,9 @@
 
 | Branch | Responsible |
 |--------|-------------|
-| `backend/*` | Aiman |
-| `frontend/*` | Moon |
-| `docs/*` | Sifat |
+| `backend` | Aiman |
+| `frontend` | Moon |
+| `docs` | Sifat |
 
 ## Pull Request Process
 
