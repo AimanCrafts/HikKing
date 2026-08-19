@@ -1,4 +1,4 @@
-# 🏔️ HikKing
+# HikKing
 
 **Explore the World with HikKing** — a full-stack travel management platform that connects travelers with verified local guides, curated destinations, and multi-modal trip planning, all from a single dashboard.
 
@@ -14,20 +14,20 @@ The project demonstrates a normalized relational database design supporting real
 
 ---
 
-## ✨ Features
+## Features
 
-- 🔐 **Role-based authentication** — separate traveler and guide accounts via Laravel Sanctum
-- 🗺️ **Destination discovery** — browse active destinations with nested package listings
-- 📦 **Package management** — guides create, edit, and publish multi-day packages with full itineraries
-- ✅ **Guide verification** — guides submit documents for admin review (pending → verified/rejected)
-- 📅 **Booking system** — travelers book packages, track status (pending/confirmed/cancelled/completed)
-- 🧳 **Trip lifecycle tracking** — confirmed bookings automatically become trips with status updates (upcoming/ongoing/completed/cancelled)
-- ⭐ **Reviews & ratings** *(in progress)* — travelers rate guides and packages after trip completion, feeding into a guide's average rating
-- 📊 **Separate dashboards** for travelers and guides
+- **Role-based authentication** — separate traveler and guide accounts via Laravel Sanctum
+- **Destination discovery** — browse active destinations with nested package listings
+- **Package management** — guides create, edit, and publish multi-day packages with full itineraries
+- **Guide verification** — guides submit documents for admin review (pending → verified/rejected)
+- **Booking system** — travelers book packages, track status (pending/confirmed/cancelled/completed)
+- **Trip lifecycle tracking** — confirmed bookings automatically become trips with status updates (upcoming/ongoing/completed/cancelled)
+- **Reviews & ratings** *(in progress)* — travelers rate guides and packages after trip completion, feeding into a guide's average rating
+- **Separate dashboards** for travelers and guides
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -40,7 +40,7 @@ The project demonstrates a normalized relational database design supporting real
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────┐
@@ -64,7 +64,7 @@ The frontend never talks to the database directly — all data flows through the
 
 ---
 
-## 🗄️ Database Schema
+## Database Schema
 
 Core entity relationships:
 
@@ -102,7 +102,7 @@ A full Entity Relationship Diagram is available in [`/docs/ERD.pdf`](./docs/ERD.
 
 ---
 
-## 🔗 API Reference
+## API Reference
 
 ### Public endpoints
 
@@ -148,7 +148,7 @@ A Postman collection covering all endpoints is available in [`/docs/HikKing.post
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -212,7 +212,7 @@ The app will be available at `http://localhost:3000`.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 HikKing/
@@ -243,7 +243,7 @@ HikKing/
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 | Phase | Component | Status |
 |---|---|---|
@@ -262,7 +262,7 @@ HikKing/
 
 ---
 
-## 👥 Team
+## Team
 
 Department of Computer Science & Engineering, AUST — CSE 3104
 
@@ -274,6 +274,6 @@ Department of Computer Science & Engineering, AUST — CSE 3104
 
 ---
 
-## 📄 License
+## License
 
 Licensed under the [MIT License](./LICENSE).
