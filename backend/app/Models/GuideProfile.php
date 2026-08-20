@@ -10,7 +10,7 @@ class GuideProfile extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'name',
         'bio',
         'experience_years',
         'specialization',
@@ -18,10 +18,10 @@ class GuideProfile extends Model
         'verification_status',
     ];
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+    protected $casts = [
+        'experience_years' => 'integer',
+        'rating_avg' => 'decimal:2',
+    ];
 
     public function verificationDocuments()
     {
