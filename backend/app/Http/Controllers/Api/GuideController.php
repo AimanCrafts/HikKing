@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class GuideProfileController extends Controller
 {
-    // Get all guides
+    
     public function index()
     {
         $guides = GuideProfile::with([
@@ -19,7 +19,7 @@ class GuideProfileController extends Controller
         return response()->json($guides);
     }
 
-    // Get single guide
+    
     public function show($id)
     {
         $guide = GuideProfile::with([
@@ -30,7 +30,7 @@ class GuideProfileController extends Controller
         return response()->json($guide);
     }
 
-    // Create guide
+    
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -47,7 +47,7 @@ class GuideProfileController extends Controller
         return response()->json($guide, 201);
     }
 
-    // Update guide
+    
     public function update(Request $request, $id)
     {
         $guide = GuideProfile::findOrFail($id);
@@ -66,7 +66,7 @@ class GuideProfileController extends Controller
         return response()->json($guide);
     }
 
-    // Delete guide
+    
     public function destroy($id)
     {
         $guide = GuideProfile::findOrFail($id);
