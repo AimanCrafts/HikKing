@@ -325,4 +325,8 @@ Route::prefix('query-results')->group(function () {
         '/bookings/subquery',
         [BookingManagementQueriesController::class, 'subquery']
     );
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad

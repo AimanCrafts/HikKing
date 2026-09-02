@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 *.log
 .DS_Store
 .env
@@ -24,4 +25,24 @@
 _ide_helper.php
 Homestead.json
 Homestead.yaml
+=======
+.env
+.env.*
+!.env.example
+vendor/
+node_modules/
+storage/*.key
+storage/framework/
+storage/logs/
+public/build/
+public/hot
+public/storage
+.phpunit.result.cache
+.phpstorm.meta.php
+_ide_helper.php
+_ide_helper_models.php
+composer.lock
+package-lock.json
+.DS_Store
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
 Thumbs.db

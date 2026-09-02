@@ -15,7 +15,11 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('destination_id')
+<<<<<<< HEAD
                 ->constrained('destinations', 'destination_id')
+=======
+                ->constrained('destinations')
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
                 ->cascadeOnDelete();
 
             $table->foreignId('guide_profile_id')

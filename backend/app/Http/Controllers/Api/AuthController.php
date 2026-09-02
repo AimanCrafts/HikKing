@@ -11,7 +11,11 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+<<<<<<< HEAD
     // Signup — creates a user, hashes password, returns token
+=======
+    
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
     public function register(Request $request)
     {
         $validated = $request->validate([
@@ -30,9 +34,13 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+<<<<<<< HEAD
         // ERD: "Has Profile" is a 1:1 relation between users and
         // guide_profiles — every guide user gets one automatically,
         // starting as "pending" until an admin verifies them.
+=======
+       
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
         if ($user->role === 'guide') {
             GuideProfile::create([
                 'user_id' => $user->id,
@@ -48,7 +56,11 @@ class AuthController extends Controller
         ], 201);
     }
 
+<<<<<<< HEAD
     // Login — verifies credentials, returns a fresh token
+=======
+    
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
     public function login(Request $request)
     {
         $validated = $request->validate([
@@ -72,7 +84,11 @@ class AuthController extends Controller
         ]);
     }
 
+<<<<<<< HEAD
     // Logout — revokes only the token used for this request
+=======
+    
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -82,7 +98,11 @@ class AuthController extends Controller
         ]);
     }
 
+<<<<<<< HEAD
     // Returns the currently authenticated user (used to restore session on page load)
+=======
+    
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
     public function me(Request $request)
     {
         return response()->json($request->user());

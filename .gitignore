@@ -1,0 +1,65 @@
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+*~
+
+# Backend - Laravel
+backend/.env
+backend/.env.*
+!.env.example
+backend/vendor/
+backend/node_modules/
+backend/storage/*.key
+backend/storage/framework/
+backend/storage/logs/
+backend/public/build/
+backend/public/hot
+backend/public/storage
+backend/.phpunit.result.cache
+backend/.phpstorm.meta.php
+backend/_ide_helper.php
+backend/_ide_helper_models.php
+backend/composer.lock
+backend/package-lock.json
+backend/yarn.lock
+backend/.cache/
+backend/.phpunit.cache/
+
+# Frontend - Next.js
+frontend/.env
+frontend/.env.*
+!.env.local.example
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+frontend/.vercel/
+frontend/yarn.lock
+frontend/package-lock.json
+frontend/.pnp/
+frontend/.pnp.js
+frontend/.pnpm-store/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backup
+*.bak
+*.backup

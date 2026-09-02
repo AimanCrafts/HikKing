@@ -1,6 +1,9 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+<<<<<<< HEAD
 // ---- Auth ----
+=======
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
 
 export type User = {
   id: number;

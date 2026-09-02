@@ -7,32 +7,20 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-<<<<<<< HEAD
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'phone', 'role', 'password'])]
-=======
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-
-#[Fillable(['name', 'email', 'password', 'phone', 'role'])]
->>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-<<<<<<< HEAD
     use HasApiTokens, HasFactory;
-=======
-    use HasFactory, Notifiable, HasApiTokens;
->>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
 
     public function guideProfile()
     {
         return $this->hasOne(GuideProfile::class);
     }
 
-<<<<<<< HEAD
     public function bookings()
     {
         return $this->hasMany(Booking::class, 'traveler_id');
@@ -54,8 +42,6 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class, 'user_id');
     }
 
-=======
->>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
     /**
      * Get the attributes that should be cast.
      *

@@ -44,6 +44,7 @@ class Package extends Model
         return $this->hasMany(PackageItinerary::class)
 	    ->orderBy('day_number');
     }
+<<<<<<< HEAD
 
     public function hotels()
     {
@@ -64,4 +65,6 @@ class Package extends Model
     {
         return $this->hasMany(Review::class, 'package_id');
     }
+=======
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
 }

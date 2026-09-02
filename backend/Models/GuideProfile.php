@@ -10,16 +10,9 @@ class GuideProfile extends Model
     use HasFactory;
 
     protected $fillable = [
-<<<<<<< HEAD
         'user_id',
         'bio',
         'experience_years',
-=======
-        'name',
-        'bio',
-        'experience_years',
-        'specialization',
->>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
         'rating_avg',
         'verification_status',
     ];
@@ -29,14 +22,11 @@ class GuideProfile extends Model
         'rating_avg' => 'decimal:2',
     ];
 
-<<<<<<< HEAD
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-=======
->>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
     public function verificationDocuments()
     {
         return $this->hasMany(VerificationDocument::class);

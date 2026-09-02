@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Destination;
+<<<<<<< HEAD
 use Illuminate\Http\Request;
 
 class DestinationController extends Controller
@@ -12,19 +13,37 @@ class DestinationController extends Controller
     public function index()
     {
         $destinations = Destination::with('packages')->get();
+=======
+
+class DestinationController extends Controller
+{
+    public function index()
+    {
+        $destinations = Destination::with('packages')
+            ->where('is_active', true)
+            ->get();
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
 
         return response()->json($destinations);
     }
 
+<<<<<<< HEAD
     // Get a single destination
+=======
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
     public function show($id)
     {
         $destination = Destination::with([
             'packages.itineraries',
+<<<<<<< HEAD
+=======
+            'packages.guideProfile.user'
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
         ])->findOrFail($id);
 
         return response()->json($destination);
     }
+<<<<<<< HEAD
 
     // Create a new destination
     public function store(Request $request)
@@ -68,3 +87,6 @@ class DestinationController extends Controller
         ]);
     }
 }
+=======
+}
+>>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
