@@ -1,3 +1,5 @@
+"use client";
+import { usePathname } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 
 export default function AdminLayout({
@@ -5,12 +7,18 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === "/admin/login";
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen flex bg-gray-50 text-gray-800">
       <Sidebar />
 
       <div className="flex-1 flex flex-col">
-        {/* Topbar */}
         <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-8">
           <span className="text-sm font-medium text-gray-500">
             Admin Dashboard
