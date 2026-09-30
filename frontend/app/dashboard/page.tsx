@@ -1,180 +1,439 @@
-<<<<<<< HEAD
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Booking,
+  Hotel,
+  Package,
   getBookings,
-  createPayment,
+  getComplaints,
+  getHotels,
+  getPackages,
   createReview,
-  createComplaint,
 } from "../lib/api";
+import PaymentModal from "./PaymentModal";
 
-function statusBadge(status: string) {
-  const styles: Record<string, string> = {
-    confirmed: "bg-teal-50 text-teal-700",
-    completed: "bg-teal-50 text-teal-700",
-    pending: "bg-amber-50 text-amber-700",
-    cancelled: "bg-red-50 text-red-700",
-  };
-  return styles[status] ?? "bg-gray-100 text-gray-500";
+const badge: Record<string, string> = {
+  confirmed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  completed: "bg-teal-50 text-teal-700 border-teal-200",
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+  cancelled: "bg-rose-50 text-rose-700 border-rose-200",
+};
+
+function daysLeft(dateStr: string) {
+  const d = new Date(dateStr.slice(0, 10) + "T00:00:00");
+  const t = new Date();
+  t.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - t.getTime()) / 86400000);
+}
+
+function fmtDate(dateStr: string) {
+  return new Date(dateStr.slice(0, 10) + "T00:00:00").toLocaleDateString(
+    "en-GB",
+    { day: "numeric", month: "short", year: "numeric" },
+  );
+}
+
+function openPanel(panel: string, bookingId?: number) {
+  window.dispatchEvent(
+    new CustomEvent("open-panel", { detail: { panel, bookingId } }),
+  );
 }
 
 export default function TravelerBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [complaintCount, setComplaintCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<number | null>(null);
+  const [paying, setPaying] = useState<Booking | null>(null);
+  const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
+  const [query, setQuery] = useState("");
 
-  // Review modal state
-  const [reviewingBooking, setReviewingBooking] = useState<Booking | null>(null);
+  const [reviewing, setReviewing] = useState<Booking | null>(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
 
-  // Complaint modal state
-  const [complainingBooking, setComplainingBooking] = useState<Booking | null>(null);
-  const [subject, setSubject] = useState("");
-
   async function loadBookings() {
-    setLoading(true);
-    const data = await getBookings(true);
-    setBookings(data);
-    setLoading(false);
+    try {
+      setBookings((await getBookings(true)) || []);
+    } catch {
+      setBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function loadComplaints() {
+    getComplaints(true)
+      .then((c) => setComplaintCount((c || []).length))
+      .catch(() => {});
   }
 
   useEffect(() => {
     loadBookings();
+    loadComplaints();
+    getPackages()
+      .then((p) => setPackages(p || []))
+      .catch(() => {});
+    getHotels()
+      .then((h) => setHotels(h || []))
+      .catch(() => {});
+    window.addEventListener("complaints-changed", loadComplaints);
+    return () =>
+      window.removeEventListener("complaints-changed", loadComplaints);
   }, []);
 
-  async function handlePay(booking: Booking) {
-    setBusyId(booking.booking_id);
+  async function submitReview() {
+    if (!reviewing) return;
     try {
-      await createPayment(booking.booking_id);
+      await createReview({
+        booking_id: reviewing.booking_id,
+        rating,
+        comment: comment || undefined,
+      });
+      setReviewing(null);
+      setComment("");
+      setRating(5);
       await loadBookings();
-    } finally {
-      setBusyId(null);
+    } catch (err: any) {
+      alert(err.message || "Failed to submit review");
     }
   }
 
-  async function submitReview() {
-    if (!reviewingBooking) return;
-    await createReview({
-      booking_id: reviewingBooking.booking_id,
-      rating,
-      comment: comment || undefined,
-    });
-    setReviewingBooking(null);
-    setComment("");
-    setRating(5);
-    loadBookings();
-  }
+  const isUpcoming = (b: Booking) =>
+    (b.booking_status === "pending" || b.booking_status === "confirmed") &&
+    daysLeft(b.travel_date) >= 0;
 
-  async function submitComplaint() {
-    if (!complainingBooking || !subject.trim()) return;
-    await createComplaint({
-      booking_id: complainingBooking.booking_id,
-      subject,
-    });
-    setComplainingBooking(null);
-    setSubject("");
-  }
+  const stats = useMemo(
+    () => ({
+      total: bookings.length,
+      confirmed: bookings.filter((b) => b.booking_status === "confirmed")
+        .length,
+      pending: bookings.filter((b) => b.booking_status === "pending").length,
+    }),
+    [bookings],
+  );
+
+  const upcomingCount = bookings.filter(isUpcoming).length;
+  const pastCount = bookings.length - upcomingCount;
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return bookings
+      .filter((b) => (tab === "upcoming" ? isUpcoming(b) : !isUpcoming(b)))
+      .filter(
+        (b) =>
+          !q ||
+          (b.package?.title || "").toLowerCase().includes(q) ||
+          (b.package?.destination?.name || "").toLowerCase().includes(q),
+      )
+      .sort((a, b) =>
+        tab === "upcoming"
+          ? a.travel_date.localeCompare(b.travel_date)
+          : b.travel_date.localeCompare(a.travel_date),
+      );
+  }, [bookings, tab, query]);
+
+  const bookedIds = new Set(bookings.map((b) => b.package_id));
+  const suggestedPackages = packages
+    .filter((p) => !bookedIds.has(p.id))
+    .slice(0, 4);
+  const suggestedHotels = hotels.slice(0, 4);
+  const showStats = stats.total > 0 || complaintCount > 0;
+
+  const statChips = [
+    { label: "Total", value: stats.total, color: "text-gray-900" },
+    { label: "Confirmed", value: stats.confirmed, color: "text-emerald-700" },
+    { label: "Pending", value: stats.pending, color: "text-amber-700" },
+    {
+      label: "Complaints",
+      value: complaintCount,
+      color: "text-rose-700",
+      onClick: () => openPanel("complaints"),
+    },
+  ];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
-      <p className="text-sm text-gray-500 mt-1 mb-8">
-        Track your trips, pay for bookings, and leave reviews.
-      </p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+          My Bookings
+        </h1>
+        <p className="text-xs text-gray-500 mt-1">
+          Track your trips, complete payments and share reviews.
+        </p>
+      </div>
 
-      {loading && <p className="text-sm text-gray-400">Loading...</p>}
-
-      {!loading && bookings.length === 0 && (
-        <div className="bg-white border border-gray-100 rounded-xl p-10 text-center text-gray-400 text-sm">
-          You haven&apos;t booked any trips yet. Browse{" "}
-          <a href="/packages" className="text-teal-600 font-medium">
-            packages
-          </a>{" "}
-          to get started.
+      {showStats && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {statChips.map((s) => (
+            <div
+              key={s.label}
+              onClick={s.onClick}
+              className={`bg-white border border-stone-200 rounded-xl px-5 py-3 flex items-center justify-between ${s.onClick ? "cursor-pointer hover:border-teal-300" : ""}`}
+            >
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                {s.label}
+              </span>
+              <span className={`text-2xl font-black ${s.color}`}>
+                {s.value}
+              </span>
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="space-y-4">
-        {bookings.map((b) => (
-          <div
-            key={b.booking_id}
-            className="bg-white border border-gray-100 rounded-xl p-5"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-gray-900">
-                  {b.package?.title ?? `Package #${b.package_id}`}
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  {b.package?.destination?.name} · {b.travel_date} ·{" "}
-                  {b.total_travelers} traveler(s)
-                </p>
-              </div>
-              <span
-                className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${statusBadge(
-                  b.booking_status,
-                )}`}
-              >
-                {b.booking_status}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between mt-4">
-              <span className="font-bold text-gray-900">
-                ৳{Number(b.total_price).toLocaleString()}
-              </span>
-              <div className="flex gap-2">
-                {b.booking_status === "pending" && (
-                  <button
-                    onClick={() => handlePay(b)}
-                    disabled={busyId === b.booking_id}
-                    className="text-xs font-medium bg-teal-600 text-white px-3 py-1.5 rounded-lg hover:bg-teal-700 disabled:opacity-60"
-                  >
-                    {busyId === b.booking_id ? "Processing..." : "Pay Now"}
-                  </button>
-                )}
-                {(b.booking_status === "confirmed" ||
-                  b.booking_status === "completed") &&
-                  !b.review && (
-                    <button
-                      onClick={() => setReviewingBooking(b)}
-                      className="text-xs font-medium border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50"
-                    >
-                      Leave Review
-                    </button>
-                  )}
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-28 rounded-2xl bg-stone-200/60 animate-pulse"
+            />
+          ))}
+        </div>
+      ) : bookings.length > 0 ? (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200">
+            <div className="flex gap-6">
+              {(["upcoming", "past"] as const).map((t) => (
                 <button
-                  onClick={() => setComplainingBooking(b)}
-                  className="text-xs font-medium border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`pb-3 text-sm font-bold capitalize border-b-2 -mb-px cursor-pointer ${tab === t ? "border-teal-600 text-teal-700" : "border-transparent text-gray-500 hover:text-gray-800"}`}
                 >
-                  File Complaint
+                  {t}{" "}
+                  <span className="text-xs font-semibold text-gray-400">
+                    ({t === "upcoming" ? upcomingCount : pastCount})
+                  </span>
                 </button>
-              </div>
+              ))}
             </div>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by package or place..."
+              className="mb-2 w-full sm:w-64 border border-stone-300 rounded-xl px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
           </div>
-        ))}
-      </div>
 
-      {/* Review modal */}
-      {reviewingBooking && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">
-              Review: {reviewingBooking.package?.title}
+          {visible.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-12 bg-white border border-stone-200 rounded-2xl">
+              No {tab} bookings{query ? " match your search" : ""}.
+            </p>
+          ) : (
+            visible.map((b) => {
+              const left = daysLeft(b.travel_date);
+              return (
+                <div
+                  key={b.booking_id}
+                  className="bg-white border border-stone-200 rounded-2xl overflow-hidden sm:flex hover:border-teal-300 transition-colors"
+                >
+                  <div className="sm:w-52 h-36 sm:h-auto shrink-0 bg-gradient-to-tr from-gray-800 to-teal-800">
+                    {b.package?.image_url && (
+                      <img
+                        src={b.package.image_url}
+                        alt={b.package.title}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
+                  <div className="p-5 flex-1 flex flex-col gap-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-bold text-gray-900">
+                          {b.package?.title}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {b.package?.destination?.name}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-gray-900">
+                          &#2547; {Number(b.total_price).toLocaleString()}
+                        </p>
+                        <span
+                          className={`inline-block mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border capitalize ${badge[b.booking_status] ?? ""}`}
+                        >
+                          {b.booking_status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600">
+                      <span>{fmtDate(b.travel_date)}</span>
+                      <span>
+                        {b.total_travelers} traveler
+                        {b.total_travelers > 1 ? "s" : ""}
+                      </span>
+                      {isUpcoming(b) && (
+                        <span className="bg-teal-50 text-teal-700 font-semibold px-2.5 py-0.5 rounded-full">
+                          {left === 0
+                            ? "Today"
+                            : left === 1
+                              ? "Tomorrow"
+                              : `${left} days to go`}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 mt-auto">
+                      {b.booking_status === "pending" && (
+                        <button
+                          onClick={() => setPaying(b)}
+                          className="text-xs font-bold bg-teal-600 text-white px-4 py-2 rounded-xl hover:bg-teal-700 cursor-pointer"
+                        >
+                          Pay now
+                        </button>
+                      )}
+                      {(b.booking_status === "confirmed" ||
+                        b.booking_status === "completed") &&
+                        !b.review && (
+                          <button
+                            onClick={() => setReviewing(b)}
+                            className="text-xs font-semibold border border-stone-300 text-gray-700 hover:bg-stone-50 px-3 py-2 rounded-xl cursor-pointer"
+                          >
+                            Write a review
+                          </button>
+                        )}
+                      <Link
+                        href={`/packages/${b.package_id}`}
+                        className="text-xs font-semibold border border-stone-300 text-gray-700 hover:bg-stone-50 px-3 py-2 rounded-xl"
+                      >
+                        View details
+                      </Link>
+                      <button
+                        onClick={() => openPanel("complaints", b.booking_id)}
+                        className="text-xs font-semibold text-gray-500 hover:text-rose-700 px-3 py-2 cursor-pointer"
+                      >
+                        Contact support
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </section>
+      ) : (
+        <p className="text-sm text-gray-600 bg-white border border-stone-200 rounded-2xl px-6 py-5">
+          You have no bookings yet. Here are some trips and stays to get you
+          started.
+        </p>
+      )}
+
+      {!loading && suggestedPackages.length > 0 && (
+        <section>
+          <div className="flex items-end justify-between mb-4">
+            <h2 className="text-lg font-extrabold text-gray-900">
+              {bookings.length
+                ? "Recommended for you"
+                : "Popular tour packages"}
+            </h2>
+            <Link
+              href="/packages"
+              className="text-xs font-bold text-teal-700 hover:underline"
+            >
+              More packages &rarr;
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {suggestedPackages.map((p) => (
+              <Link
+                key={p.id}
+                href={`/packages/${p.id}`}
+                className="group bg-white border border-stone-200 rounded-2xl overflow-hidden hover:shadow-md transition"
+              >
+                <div className="h-32 bg-gradient-to-tr from-gray-800 to-teal-800 overflow-hidden">
+                  {p.image_url && (
+                    <img
+                      src={p.image_url}
+                      alt={p.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="text-sm font-bold text-gray-900 line-clamp-1">
+                    {p.title}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {p.duration_days} days &middot; From &#2547;{" "}
+                    {Number(p.price).toLocaleString()}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {!loading && suggestedHotels.length > 0 && (
+        <section>
+          <div className="flex items-end justify-between mb-4">
+            <h2 className="text-lg font-extrabold text-gray-900">
+              {bookings.length
+                ? "Stays you may like"
+                : "Partner hotels & stays"}
+            </h2>
+            <Link
+              href="/hotels"
+              className="text-xs font-bold text-teal-700 hover:underline"
+            >
+              More hotels &rarr;
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {suggestedHotels.map((h) => (
+              <Link
+                key={h.hotel_id}
+                href="/hotels"
+                className="bg-white border border-stone-200 rounded-2xl p-4 hover:border-teal-300 hover:shadow-md transition"
+              >
+                <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                  {h.star_rating ?? "-"}-Star
+                </span>
+                <h3 className="text-sm font-bold text-gray-900 mt-3 line-clamp-1">
+                  {h.hotel_name}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                  {h.address}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {paying && (
+        <PaymentModal
+          booking={paying}
+          onClose={() => setPaying(null)}
+          onDone={loadBookings}
+        />
+      )}
+
+      {reviewing && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-stone-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
+              Rate your trip
             </h3>
-            <div className="flex gap-1 mb-4">
+            <p className="text-xs text-gray-500 mb-5">
+              {reviewing.package?.title}
+            </p>
+            <div className="flex gap-1 mb-5">
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
                   key={n}
+                  type="button"
                   onClick={() => setRating(n)}
-                  className={`text-2xl ${
-                    n <= rating ? "text-yellow-500" : "text-gray-200"
-                  }`}
+                  aria-label={`${n} stars`}
+                  className={`text-3xl leading-none cursor-pointer ${n <= rating ? "text-amber-500" : "text-stone-300"}`}
                 >
-                  ★
+                  &#9733;
                 </button>
               ))}
             </div>
@@ -182,50 +441,19 @@ export default function TravelerBookingsPage() {
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Share your experience..."
-              rows={3}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              rows={4}
+              className="w-full border border-stone-300 rounded-xl p-3 text-sm mb-5 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
             <div className="flex gap-3">
               <button
                 onClick={submitReview}
-                className="flex-1 bg-teal-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-teal-700"
+                className="flex-1 bg-teal-600 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-teal-700 cursor-pointer"
               >
-                Submit
+                Submit review
               </button>
               <button
-                onClick={() => setReviewingBooking(null)}
-                className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2 rounded-lg hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Complaint modal */}
-      {complainingBooking && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">
-              File a Complaint: {complainingBooking.package?.title}
-            </h3>
-            <input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="What went wrong?"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={submitComplaint}
-                className="flex-1 bg-teal-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-teal-700"
-              >
-                Submit
-              </button>
-              <button
-                onClick={() => setComplainingBooking(null)}
-                className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2 rounded-lg hover:bg-gray-200"
+                onClick={() => setReviewing(null)}
+                className="flex-1 bg-stone-100 text-stone-700 text-xs font-bold py-2.5 rounded-xl hover:bg-stone-200 cursor-pointer"
               >
                 Cancel
               </button>
@@ -236,242 +464,3 @@ export default function TravelerBookingsPage() {
     </div>
   );
 }
-=======
-"use client";
-
-import { useEffect, useState } from "react";
-import {
-  Booking,
-  getBookings,
-  createPayment,
-  createReview,
-  createComplaint,
-} from "../lib/api";
-
-function statusBadge(status: string) {
-  const styles: Record<string, string> = {
-    confirmed: "bg-teal-50 text-teal-700",
-    completed: "bg-teal-50 text-teal-700",
-    pending: "bg-amber-50 text-amber-700",
-    cancelled: "bg-red-50 text-red-700",
-  };
-  return styles[status] ?? "bg-gray-100 text-gray-500";
-}
-
-export default function TravelerBookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<number | null>(null);
-
-  // Review modal state
-  const [reviewingBooking, setReviewingBooking] = useState<Booking | null>(null);
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState("");
-
-  // Complaint modal state
-  const [complainingBooking, setComplainingBooking] = useState<Booking | null>(null);
-  const [subject, setSubject] = useState("");
-
-  async function loadBookings() {
-    setLoading(true);
-    const data = await getBookings(true);
-    setBookings(data);
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    loadBookings();
-  }, []);
-
-  async function handlePay(booking: Booking) {
-    setBusyId(booking.booking_id);
-    try {
-      await createPayment(booking.booking_id);
-      await loadBookings();
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function submitReview() {
-    if (!reviewingBooking) return;
-    await createReview({
-      booking_id: reviewingBooking.booking_id,
-      rating,
-      comment: comment || undefined,
-    });
-    setReviewingBooking(null);
-    setComment("");
-    setRating(5);
-    loadBookings();
-  }
-
-  async function submitComplaint() {
-    if (!complainingBooking || !subject.trim()) return;
-    await createComplaint({
-      booking_id: complainingBooking.booking_id,
-      subject,
-    });
-    setComplainingBooking(null);
-    setSubject("");
-  }
-
-  return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
-      <p className="text-sm text-gray-500 mt-1 mb-8">
-        Track your trips, pay for bookings, and leave reviews.
-      </p>
-
-      {loading && <p className="text-sm text-gray-400">Loading...</p>}
-
-      {!loading && bookings.length === 0 && (
-        <div className="bg-white border border-gray-100 rounded-xl p-10 text-center text-gray-400 text-sm">
-          You haven&apos;t booked any trips yet. Browse{" "}
-          <a href="/packages" className="text-teal-600 font-medium">
-            packages
-          </a>{" "}
-          to get started.
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {bookings.map((b) => (
-          <div
-            key={b.booking_id}
-            className="bg-white border border-gray-100 rounded-xl p-5"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-gray-900">
-                  {b.package?.title ?? `Package #${b.package_id}`}
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  {b.package?.destination?.name} · {b.travel_date} ·{" "}
-                  {b.total_travelers} traveler(s)
-                </p>
-              </div>
-              <span
-                className={`text-xs font-medium px-2 py-1 rounded-full capitalize ${statusBadge(
-                  b.booking_status,
-                )}`}
-              >
-                {b.booking_status}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between mt-4">
-              <span className="font-bold text-gray-900">
-                ৳{Number(b.total_price).toLocaleString()}
-              </span>
-              <div className="flex gap-2">
-                {b.booking_status === "pending" && (
-                  <button
-                    onClick={() => handlePay(b)}
-                    disabled={busyId === b.booking_id}
-                    className="text-xs font-medium bg-teal-600 text-white px-3 py-1.5 rounded-lg hover:bg-teal-700 disabled:opacity-60"
-                  >
-                    {busyId === b.booking_id ? "Processing..." : "Pay Now"}
-                  </button>
-                )}
-                {(b.booking_status === "confirmed" ||
-                  b.booking_status === "completed") &&
-                  !b.review && (
-                    <button
-                      onClick={() => setReviewingBooking(b)}
-                      className="text-xs font-medium border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50"
-                    >
-                      Leave Review
-                    </button>
-                  )}
-                <button
-                  onClick={() => setComplainingBooking(b)}
-                  className="text-xs font-medium border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50"
-                >
-                  File Complaint
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Review modal */}
-      {reviewingBooking && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">
-              Review: {reviewingBooking.package?.title}
-            </h3>
-            <div className="flex gap-1 mb-4">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setRating(n)}
-                  className={`text-2xl ${
-                    n <= rating ? "text-yellow-500" : "text-gray-200"
-                  }`}
-                >
-                  ★
-                </button>
-              ))}
-            </div>
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Share your experience..."
-              rows={3}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={submitReview}
-                className="flex-1 bg-teal-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-teal-700"
-              >
-                Submit
-              </button>
-              <button
-                onClick={() => setReviewingBooking(null)}
-                className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2 rounded-lg hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Complaint modal */}
-      {complainingBooking && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">
-              File a Complaint: {complainingBooking.package?.title}
-            </h3>
-            <input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="What went wrong?"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={submitComplaint}
-                className="flex-1 bg-teal-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-teal-700"
-              >
-                Submit
-              </button>
-              <button
-                onClick={() => setComplainingBooking(null)}
-                className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2 rounded-lg hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
->>>>>>> 32ecafb4c407726f37ea64f1ebd1c43a725e26ad
