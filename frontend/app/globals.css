@@ -1,0 +1,323 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   HikKing design tokens
+   Light = misty river-green. Dark = night over the delta.
+   ------------------------------------------------------------------ */
+:root {
+  --bg: #f2f6f4;
+  --surface: #ffffff;
+  --sunk: #e8efec;
+  --ink: #0b2623;
+  --ink-2: #3d5651;
+  --ink-3: #6f8681;
+  --line: #dbe5e1;
+  --jade: #0e7c66;
+  --jade-deep: #093f35;
+  --jade-soft: #dcf1ea;
+  --on-jade: #ffffff;
+  --sun: #ffb938;
+  --sun-soft: #fff0cf;
+  --on-sun: #3a2500;
+  --danger: #c8423b;
+  --danger-soft: #fde9e7;
+  --info: #2a74ad;
+  --info-soft: #e4f0f9;
+  --warn: #a8690b;
+  --warn-soft: #fff1d6;
+  --shadow-pop: 0 18px 50px -12px rgba(9, 63, 53, 0.28);
+  --shadow-lift: 0 10px 30px -14px rgba(9, 63, 53, 0.35);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #08130f;
+  --surface: #0f1e1a;
+  --sunk: #152824;
+  --ink: #e7f3ef;
+  --ink-2: #a3bcb5;
+  --ink-3: #6f8982;
+  --line: #213832;
+  --jade: #35c9a4;
+  --jade-deep: #04201a;
+  --jade-soft: #11382f;
+  --on-jade: #03231c;
+  --sun: #ffc65c;
+  --sun-soft: #3a2c0c;
+  --on-sun: #3a2500;
+  --danger: #f08178;
+  --danger-soft: #3a1a18;
+  --info: #7cb9e6;
+  --info-soft: #14283a;
+  --warn: #f0b552;
+  --warn-soft: #3a2c0c;
+  --shadow-pop: 0 18px 50px -12px rgba(0, 0, 0, 0.7);
+  --shadow-lift: 0 10px 30px -14px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sunk: var(--sunk);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink-2);
+  --color-ink3: var(--ink-3);
+  --color-line: var(--line);
+  --color-jade: var(--jade);
+  --color-jade-deep: var(--jade-deep);
+  --color-jade-soft: var(--jade-soft);
+  --color-on-jade: var(--on-jade);
+  --color-sun: var(--sun);
+  --color-sun-soft: var(--sun-soft);
+  --color-on-sun: var(--on-sun);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-nunito), "Nunito", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-nunito), "Nunito", system-ui, sans-serif;
+  font-feature-settings: "kern", "liga";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection {
+  background: var(--jade);
+  color: var(--on-jade);
+}
+button,
+a,
+select,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+:focus-visible {
+  outline: 2px solid var(--jade);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+img {
+  max-width: 100%;
+}
+
+/* Type scale (minor third, tightened at display sizes) */
+@layer components {
+  .t-display {
+    font-size: clamp(2.6rem, 6.2vw, 5.4rem);
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+  }
+  .t-h1 {
+    font-size: clamp(2.1rem, 4.2vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+  }
+  .t-h2 {
+    font-size: clamp(1.6rem, 2.8vw, 2.35rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+  }
+  .t-h3 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+  .t-lead {
+    font-size: clamp(1.02rem, 1.4vw, 1.2rem);
+    line-height: 1.65;
+    font-weight: 500;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: clamp(1.1rem, 3.5vw, 2.5rem);
+  }
+  .field {
+    width: 100%;
+    border: 1.5px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 0.8rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field::placeholder {
+    color: var(--ink-3);
+    font-weight: 500;
+  }
+  .field:hover {
+    border-color: color-mix(in srgb, var(--jade) 40%, var(--line));
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--jade);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--jade) 18%, transparent);
+  }
+  .scroll-x {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .scroll-x::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Motion. Each is used once, on purpose.
+   ------------------------------------------------------------------ */
+@keyframes hk-kenburns {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.12) translate3d(-1.2%, -1%, 0);
+  }
+}
+@keyframes hk-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes hk-drift {
+  from {
+    transform: translate3d(-30%, 0, 0);
+  }
+  to {
+    transform: translate3d(130%, 0, 0);
+  }
+}
+@keyframes hk-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+@keyframes hk-wave {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@keyframes hk-boat {
+  from {
+    transform: translate3d(-15vw, 0, 0);
+  }
+  to {
+    transform: translate3d(115vw, 0, 0);
+  }
+}
+@keyframes hk-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-1.5deg);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0) rotate(1.5deg);
+  }
+}
+@keyframes hk-letter {
+  from {
+    transform: translate3d(0, 110%, 0) rotate(6deg);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0) rotate(0);
+    opacity: 1;
+  }
+}
+@keyframes hk-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+@keyframes hk-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes hk-pop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+@keyframes hk-ping {
+  75%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.hk-skeleton {
+  background: linear-gradient(
+    100deg,
+    var(--sunk) 30%,
+    color-mix(in srgb, var(--sunk) 55%, var(--surface)) 50%,
+    var(--sunk) 70%
+  );
+  background-size: 200% 100%;
+  animation: hk-shimmer 1.6s linear infinite;
+}
+.hk-pop {
+  animation: hk-pop 0.18s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
